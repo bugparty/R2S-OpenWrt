@@ -53,29 +53,7 @@ jobs:
         cd openwrt
         cp -r ../SCRIPTS/. ./
         /bin/bash 02_prepare_package.sh
-    - name: Convert Translation
-      run: |
-        cd openwrt
-        /bin/bash 03_convert_translation.sh
-    - name: Remove Upx
-      run: |
-        cd openwrt
-        /bin/bash 04_remove_upx.sh
-    - name: Add ACL
-      run: |
-        cd openwrt
-        /bin/bash 05_create_acl_for_luci.sh -a
-    - name: Make Config
-      run: |
-        cd openwrt
-        mv ../SEED/config_no_docker.seed .config
-        make defconfig
-        chmod -R 755 ./
-    - name: Make Download
-      run: |
-        df -h
-        cd openwrt
-        make download -j10
+
     - name: Print Disk Space After
       run: df -h
     - name: Assemble Artifact
@@ -86,15 +64,15 @@ jobs:
         cp -r openwrt/* ./artifact/
         cd openwrt
         cd ..
-        zip -r artifact.zip ./artifact/
-        ls -lh artifact.zip
+        tar cvzf - ./openwrt/ | split -b 500m - ./artifact/openwrt.tar.gz.
+        ls -lh *
         release_tag="R2S-GC404-$(date +%Y-%m-%d)"
         echo "##[set-output name=release_tag;]$release_tag"
     - name: Upload Artifact
       uses: actions/upload-artifact@master
       with:
         name: ${{ steps.assemble_artifact.outputs.release_tag }}-sources
-        path: ./artifact.zip
+        path: ./artifact/*
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
